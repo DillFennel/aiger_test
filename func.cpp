@@ -3,6 +3,7 @@
 #include <string.h>
 #include <fstream>
 #include <assert.h>
+#include <vector>
 
 using namespace std;
 
@@ -28,15 +29,74 @@ unsigned lit2ind_old(aiger* model, unsigned lit){ //Note: Outputs indexes don't 
     } 
 }
 
-unsigned lit2ind(aiger* model, unsigned lit){ //Note: Outputs indexes don't match this rule. For them, use simple search
-    return aiger_get_ind(model, lit);
-}
-
-
 unsigned lit2ind_independant(aiger* model, unsigned lit){
     return 0;
 }
 
+void info_model(aiger* model){//Show basic information about aiger model
+    printf("------------------------------\n");
+    printf("maxvar: %d\n", model->maxvar);
+    printf("IN: %d\n", model->num_inputs); //model->inputs
+    for (int i=0; i<model->num_inputs; i++){
+        printf("\tlit: %d | %d | %d  name: %s\n", model->inputs[i].lit, 
+                                            aiger_lit2var(model->inputs[i].lit), 
+                                            aiger_lit2tag(model, model->inputs[i].lit),
+                                            model->inputs[i].name);
+    }
+    printf("LAT: %d\n", model->num_latches);  //model->latches
+    for (int i=0; i<model->num_latches; i++){
+        printf("\tlit: %d | %d | %d   name: %s   next: %d | %d | %d   reset: %d\n", model->latches[i].lit, 
+                                                                        aiger_lit2var(model->latches[i].lit),
+                                                                        aiger_lit2tag(model, model->latches[i].lit),
+                                                                        model->latches[i].name,
+                                                                        model->latches[i].next,
+                                                                        aiger_lit2var(model->latches[i].next),
+                                                                        model->latches[i].reset);
+    }
+    printf("OUT: %d\n", model->num_outputs);  //model->outputs
+    for (int i=0; i<model->num_outputs; i++){
+        printf("\tlit: %d | %d | %d   name: %s\n", model->outputs[i].lit,
+                                                aiger_lit2var(model->outputs[i].lit),
+                                                aiger_lit2tag(model, model->outputs[i].lit),
+                                                model->outputs[i].name);
+    }
+    printf("AND: %d\n", model->num_ands);  //model->ands
+    for (int i=0; i<model->num_ands; i++){
+        printf("\tlhs: %d | %d | %d   rhs0: %d | %d | %d   rhs1: %d | %d | %d\n", model->ands[i].lhs,
+                                                                    aiger_lit2var(model->ands[i].lhs),
+                                                                    aiger_lit2tag(model, model->ands[i].lhs),
+                                                                    model->ands[i].rhs0,
+                                                                    aiger_lit2var(model->ands[i].rhs0),
+                                                                    aiger_lit2tag(model, model->ands[i].rhs0),
+                                                                    model->ands[i].rhs1,
+                                                                    aiger_lit2var(model->ands[i].rhs1),
+                                                                    aiger_lit2tag(model, model->ands[i].rhs1));
+    }
+    printf("------------------------------\n");
+    printf("BAD: %d\n", model->num_bad); //model->bad
+    for (int i=0; i<model->num_bad; i++){
+        printf("\tlit: %d | %d | %d   name: %s\n", model->bad[i].lit,
+                                                aiger_lit2var(model->bad[i].lit),
+                                                aiger_lit2tag(model, model->bad[i].lit),
+                                                model->bad[i].name);
+    }
+    printf("CON: %d\n", model->num_constraints); //model->constraint
+    for (int i=0; i<model->num_constraints; i++){
+        printf("\tlit: %d | %d | %d   name: %s\n", model->constraints[i].lit,
+                                                aiger_lit2var(model->constraints[i].lit),
+                                                aiger_lit2tag(model, model->constraints[i].lit),
+                                                model->constraints[i].name);
+    }
+    printf("FAIR: %d\n", model->num_fairness); //model->num_fairness
+    for (int i=0; i<model->num_fairness; i++){
+        printf("\tlit: %d | %d | %d   name: %s\n", model->fairness[i].lit,
+                                                aiger_lit2var(model->fairness[i].lit),
+                                                aiger_lit2tag(model, model->fairness[i].lit),
+                                                model->fairness[i].name);
+    }
+    printf("------------------------------\n");
+}
+/*
 void info_model(aiger* model){//Show basic information about aiger model
     printf("------------------------------\n");
     printf("maxvar: %d\n", model->maxvar);
@@ -111,6 +171,8 @@ void info_model(aiger* model){//Show basic information about aiger model
     }
     printf("------------------------------\n");
 }
+*/
+/*
 void check_ind(aiger* model){//Show basic information about aiger model
     printf("------------------------------\n");
     printf("maxvar: %d\n", model->maxvar);
@@ -170,6 +232,7 @@ void check_ind(aiger* model){//Show basic information about aiger model
     }
     printf("------------------------------\n");
 }
+*/
 /*
 void bfs_model(aiger* model, unsigned lit){
     queue<unsigned> to_go; //Queue with lits of verces, to that go
@@ -193,7 +256,7 @@ void read_and_check_ind(const char * inp){
     aiger* model = aiger_init(); //Initilase model
     aiger_read_from_file(model, file); //Read aiger from file
     printf("Model info:\n");
-    check_ind(model);
+    //check_ind(model);
 }
 int test_work_with_file(){
     //  input/and.aig
@@ -237,7 +300,34 @@ void test_all_aiger_tests(){
         myfile.close();
     }
 }
+struct aiger_type
+{
+  unsigned aig_input = 0;
+  unsigned aig_latch = 0;
+  unsigned aig_and = 0;
+
+  unsigned idx;
+};
 int main(){
-    cout<<("\n\033[1;327mQQQQQQQQ\033[0;0m\nQQQQQQQQ\n");
+    aiger* model = aiger_init();
+    FILE *file;
+    file = fopen("/home/user1/work/aiger_tests/aiger_test_files/and.aag", "r");
+    aiger_read_from_file(model, file);
+    info_model(model);
+    unsigned var, tag;
+    vector<int> prev_cells (model->maxvar); //Store previous cells
+    for (int i=0; i<model->num_inputs; i++){
+        prev_cells[aiger_lit2var(model->inputs[i].lit)] = model->inputs[i].lit;
+    }
+    for (int i=0; i<model->num_latches; i++){
+        prev_cells[aiger_lit2var(model->latches[i].lit)] = model->inputs[i].lit;
+    }
+    for (int i=0; i<model->num_ands; i++){
+        prev_cells[aiger_lit2var(model->ands[i].lhs)] = model->inputs[i].lit;
+    }
+    for(int i=0; i<model->maxvar; i++){
+        std::cout << i << " " << prev_cells[i] << std::endl;
+    }
+    //Add out cells
     return 0;
 }
